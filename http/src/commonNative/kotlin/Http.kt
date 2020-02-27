@@ -88,7 +88,7 @@ class HttpInterceptor : Interceptor {
                     val injectedHeader = prepareHeaders(httpWriteHeaders)
                     val responseTail = readBytes.copyOfRange(index, size.convert())
                     val modified = firstLineOfResponse + injectedHeader + responseTail
-                    logger.debug { "App write http by '$fd' fd: \n\t${modified.decodeToString().replace("\r\n", "\r\n\t")}" }
+                    logger.debug { "App write http by '$fd' fd: \n\t${( readBytes.copyOfRange(FIRST_INDEX, readBytes.indexOf(HEADERS_DELIMITER))).decodeToString().replace("\r\n", "\r\n\t")}" }
                     writeHttpCallback.value(modified)
                     return TcpFinalData(
                         modified.toCValues().getPointer(this),

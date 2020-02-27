@@ -9,7 +9,7 @@ class JvmTest : TestBase() {
         val server = HttpServer.create()
         server.bind(InetSocketAddress(0), 0)
         server.createContext("/") { exchange ->
-            generateBigSizeHeaders(exchange)
+//            generateBigSizeHeaders(exchange)
             val bytes = responseMessage.toByteArray()
             exchange.sendResponseHeaders(200, bytes.size.toLong())
             val os = exchange.responseBody

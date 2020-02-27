@@ -5,6 +5,7 @@ import com.epam.drill.jvmapi.gen.jobject
 import com.epam.drill.logger.LoggerConfig
 import com.epam.drill.logger.logConfig
 import kotlin.native.concurrent.freeze
+import com.epam.drill.interceptor.*
 
 @Suppress("UNUSED_PARAMETER", "UNUSED")
 @CName("Agent_OnLoad")

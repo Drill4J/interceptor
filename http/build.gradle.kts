@@ -17,7 +17,7 @@ kotlin {
         common {
             defaultSourceSet {
                 dependencies {
-                    implementation("com.epam.drill.hook:drill-hook:1.1.0")
+                    implementation("com.epam.drill.hook:drill-hook:1.2.0")
                     implementation("com.epam.drill.logger:logger:0.1.0")
                 }
 
