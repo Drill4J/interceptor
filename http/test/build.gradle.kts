@@ -26,7 +26,7 @@ fun org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension.currentTarget(
     config: KotlinNativeTarget.() -> Unit = {}
 ): KotlinNativeTarget {
     val createTarget =
-        (presets.getByName(presetName) as org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithTestsPreset).createTarget(
+        (presets.getByName(presetName) as org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTestsPreset).createTarget(
             name
         )
     targets.add(createTarget)
@@ -85,10 +85,10 @@ kotlin {
         val common = maybeCreate("${JVM_TEST_TARGET_NAME}Main")
         with(common) {
             dependencies {
-                implementation("com.epam.drill.hook:drill-hook:1.2.0")
+                implementation("com.epam.drill.hook:drill-hook:1.2.1")
                 api(project(":http"))
-                implementation("com.epam.drill:jvmapi-native:0.3.0")
-                implementation("com.epam.drill.logger:logger:0.1.0")
+                implementation("com.epam.drill:jvmapi-native:0.4.1")
+                implementation("com.epam.drill.logger:logger:0.1.2")
             }
 
         }
