@@ -1,6 +1,6 @@
 plugins {
-    id("org.jetbrains.kotlin.multiplatform") version "1.3.61"
-    id("com.epam.drill.cross-compilation") version "0.14.2"
+    id("org.jetbrains.kotlin.multiplatform") version "1.3.70"
+    id("com.epam.drill.cross-compilation") version "0.15.1"
     `maven-publish`
 }
 
@@ -17,8 +17,8 @@ kotlin {
         common {
             defaultSourceSet {
                 dependencies {
-                    implementation("com.epam.drill.hook:drill-hook:1.2.0")
-                    implementation("com.epam.drill.logger:logger:0.1.0")
+                    implementation("com.epam.drill.hook:drill-hook:1.2.1")
+                    implementation("com.epam.drill.logger:logger:0.1.2")
                 }
 
             }
