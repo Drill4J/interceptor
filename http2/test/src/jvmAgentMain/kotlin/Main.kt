@@ -1,4 +1,4 @@
-@file:Suppress("UNUSED_PARAMETER", "FunctionName", "unused")
+@file:Suppress("UNUSED_PARAMETER", "unused", "FunctionName")
 
 import com.epam.drill.jvmapi.gen.*
 import com.epam.drill.jvmapi.gen.jobject
@@ -13,6 +13,20 @@ import kotlinx.cinterop.CPointer
 @Suppress("UNUSED_PARAMETER", "UNUSED")
 @CName("Agent_OnLoad")
 fun agentOnLoad(vmPointer: Long, options: String, reservedPtr: Long): Int {
+    logConfig.value = LoggerConfig(
+        isTraceEnabled = true,
+        isDebugEnabled = true,
+        isInfoEnabled = true,
+        isWarnEnabled = true
+    ).freeze()
+    configureHttpInterceptor2()
+    com.epam.drill.hook.io.tcp.injectedHeaders.value = {  mapOf("xxx" to "yyy") }.freeze()
+    com.epam.drill.hook.io.tcp.readHeaders.value = { it: Map<ByteArray, ByteArray> ->
+        it.forEach { (k, v) -> println("${k.decodeToString()}: ${v.decodeToString()}") }
+    }.freeze()
+    com.epam.drill.hook.io.tcp.readCallback.value = { _: ByteArray -> println("READ") }.freeze()
+    com.epam.drill.hook.io.tcp.writeCallback.value = { _: ByteArray -> println("WRITE") }.freeze()
+
     return 0
 }
 
@@ -31,17 +45,14 @@ fun addHttpHook(env: JNIEnv, thiz: jobject) {
         isInfoEnabled = true,
         isWarnEnabled = true
     ).freeze()
-    configureHttpInterceptor()
-    com.epam.drill.hook.io.tcp.injectedHeaders.value = { injectedHeaders }.freeze()
+    configureHttpInterceptor2()
+    com.epam.drill.hook.io.tcp.injectedHeaders.value = {  mapOf("xxx" to "yyy") }.freeze()
     com.epam.drill.hook.io.tcp.readHeaders.value = { it: Map<ByteArray, ByteArray> ->
-        it.forEach { (k, v) ->
-            println("${k.decodeToString()}: ${v.decodeToString()}")
-        }
+        it.forEach { (k, v) -> println("${k.decodeToString()}: ${v.decodeToString()}") }
     }.freeze()
     com.epam.drill.hook.io.tcp.readCallback.value = { _: ByteArray -> println("READ") }.freeze()
     com.epam.drill.hook.io.tcp.writeCallback.value = { _: ByteArray -> println("WRITE") }.freeze()
 }
-
 
 @CName("currentEnvs")
 fun currentEnvs(): JNIEnvPointer {

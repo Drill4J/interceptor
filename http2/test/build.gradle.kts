@@ -1,7 +1,5 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
-import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
@@ -36,7 +34,7 @@ fun org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension.currentTarget(
     return createTarget
 }
 
-val libName = "hook"
+val libName = "http2Interceptor"
 
 val JVM_TEST_TARGET_NAME = "jvmAgent"
 
@@ -54,68 +52,53 @@ kotlin {
                 implementation(kotlin("stdlib"))
                 implementation(kotlin("reflect"))
                 implementation(kotlin("test-junit"))
-            }
-        }
-    }
-    val jvmCommonSourceset = jvm.compilations["main"].defaultSourceSet
-    jvm("SunServer") {
-        compilations["test"].defaultSourceSet {
-            dependsOn(jvmCommonSourceset)
-        }
-    }
 
-    jvm("UndertowServer") {
-        compilations["test"].defaultSourceSet {
-            dependsOn(jvmCommonSourceset)
-            dependencies {
-                implementation("io.undertow:undertow-core:2.0.29.Final")
-                implementation("io.undertow:undertow-servlet:2.0.29.Final")
             }
         }
     }
-    jvm("JettyServer") {
-        compilations["test"].defaultSourceSet {
-            dependsOn(jvmCommonSourceset)
-            dependencies {
-                implementation("org.eclipse.jetty:jetty-server:9.4.26.+")
-            }
-        }
-    }
+//    val ktor_version = "1.3.2"
+//    var tcnative_classifier =""
+//    var osName = System.getProperty("os.name").toLowerCase()
+//
+//    if (osName.contains("win")) {
+//        tcnative_classifier = "windows-x86_64"
+//    } else if (osName.contains("linux")) {
+//        tcnative_classifier = "linux-x86_64"
+//    } else if (osName.contains("mac")) {
+//        tcnative_classifier = "osx-x86_64"
+//    } else {
+//        tcnative_classifier = ""
+//    }
+//    val jvmCommonSourceset = jvm.compilations["main"].defaultSourceSet
+//    jvm("JettyServer") {
+//        compilations["test"].defaultSourceSet {
+//            dependsOn(jvmCommonSourceset)
+//            val tcnative_version = "2.0.28.Final"
+//            dependencies {
+//                implementation("io.ktor:ktor-server-netty:$ktor_version")
+//                implementation("io.ktor:ktor-html-builder:$ktor_version")
+//                implementation("io.ktor:ktor-network-tls:$ktor_version")
+//                implementation("io.ktor:ktor-network-tls-certificates:$ktor_version")
+//                implementation("io.netty:netty-tcnative:$tcnative_version")
+//                implementation("io.netty:netty-tcnative-boringssl-static:$tcnative_version")
+//                implementation("io.netty:netty-tcnative-boringssl-static:$tcnative_version:$tcnative_classifier")
+//                implementation("io.ktor:ktor-client-jetty:$ktor_version")
+//                implementation("org.eclipse.jetty.http2:http2-client")
+//
+//            }
+//        }
+//    }
 
     sourceSets {
 
         val common = maybeCreate("${JVM_TEST_TARGET_NAME}Main")
         with(common) {
             dependencies {
-                implementation("com.epam.drill.hook:drill-hook:1.2.1")
-                api(project(":http"))
+                api(project(":http2"))
                 implementation("com.epam.drill:jvmapi-native:0.4.1")
                 implementation("com.epam.drill.logger:logger:0.1.2")
             }
 
-        }
-
-
-        val jvmsTargets = targets.filterIsInstance<org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget>()
-            .filter { it.name != "jvm" }
-        jvmsTargets.forEach {
-            it.compilations.forEach { knCompilation ->
-                if (knCompilation.name == "test") {
-                    knCompilation.defaultSourceSet {
-                        dependencies {
-                            implementation(kotlin("test-junit"))
-                        }
-                    }
-                } else {
-                    knCompilation.defaultSourceSet {
-                        dependencies {
-                            implementation(kotlin("stdlib"))
-                            implementation(kotlin("reflect"))
-                        }
-                    }
-                }
-
-            }
         }
 
         named("commonMain") {
@@ -129,25 +112,27 @@ kotlin {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
 }
+tasks {
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = "1.8"
+        }
+    }
+}
 val linkJVMTIAgentTaskName = "link${libName.capitalize()}DebugShared${JVM_TEST_TARGET_NAME.capitalize()}"
-
-tasks.withType<KotlinJvmTest> {
+tasks.withType<org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest> {
     dependsOn(tasks.getByPath(linkJVMTIAgentTaskName))
     testLogging.showStandardStreams = true
     attachJVMTIAgent()
 }
 
-tasks.withType<JavaExec> {
-    dependsOn(tasks.getByPath(linkJVMTIAgentTaskName))
-    attachJVMTIAgent()
-}
 
 fun JavaForkOptions.attachJVMTIAgent() {
     val targetFromPreset = (kotlin.targets[JVM_TEST_TARGET_NAME]) as KotlinNativeTarget
     jvmArgs(
         "-agentpath:${targetFromPreset
             .binaries
-            .findSharedLib(libName, NativeBuildType.DEBUG)!!
+            .findSharedLib(libName, org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType.DEBUG)!!
             .outputFile.toPath()}"
     )
 }

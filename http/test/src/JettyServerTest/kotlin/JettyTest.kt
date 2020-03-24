@@ -1,7 +1,11 @@
+package test
+
+import TestBase
 import org.eclipse.jetty.server.Request
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.server.handler.AbstractHandler
+import responseMessage
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.nio.charset.StandardCharsets.UTF_8
@@ -10,7 +14,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 
-class JettyTest : TestBase() {
+open class JettyTest : TestBase() {
 
     override fun setupServer() {
         val server = Server()

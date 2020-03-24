@@ -26,12 +26,14 @@ kotlin {
         }
     }
 
+
     macosX64()
     mingwX64()
     linuxX64()
 
-    sourceSets {
-        commonMain {
+
+    sourceSets{
+        commonMain{
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
             }

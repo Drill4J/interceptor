@@ -1,6 +1,7 @@
 import io.undertow.Undertow
 import io.undertow.util.Headers
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 
 class UndertowTest : TestBase() {
 

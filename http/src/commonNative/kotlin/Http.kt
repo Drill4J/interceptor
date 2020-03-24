@@ -3,17 +3,15 @@ package com.epam.drill.interceptor
 import com.epam.drill.hook.gen.DRILL_SOCKET
 import com.epam.drill.hook.io.TcpFinalData
 import com.epam.drill.hook.io.configureTcpHooks
-import com.epam.drill.hook.io.tcp.Interceptor
-import com.epam.drill.hook.io.tcp.interceptor
+import com.epam.drill.hook.io.tcp.*
 import kotlinx.cinterop.*
 import mu.KotlinLogging
-import kotlin.native.concurrent.AtomicReference
 import kotlin.native.concurrent.freeze
 
 
-fun configureHttpInterceptor() {
+actual fun configureHttpInterceptor() {
     configureTcpHooks()
-    interceptor.value = HttpInterceptor().freeze()
+    interceptors += HttpInterceptor().freeze()
 }
 
 
@@ -25,28 +23,10 @@ const val FIRST_INDEX = 0
 
 @SharedImmutable
 val HTTP_VERBS =
-    setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT") + HTTP_RESPONSE_MARKER
+    setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI") + HTTP_RESPONSE_MARKER
 
 @SharedImmutable
 val logger = KotlinLogging.logger("http")
-
-@SharedImmutable
-val CR_LF = "\r\n"
-
-@SharedImmutable
-val CR_LF_BYTES = CR_LF.encodeToByteArray()
-
-@SharedImmutable
-val HEADERS_DELIMITER = CR_LF_BYTES + CR_LF_BYTES
-
-@SharedImmutable
-val headersForInject = AtomicReference({ emptyMap<String, String>() }.freeze()).freeze()
-
-@SharedImmutable
-val readHttpCallback = AtomicReference({ _: ByteArray -> Unit }.freeze()).freeze()
-
-@SharedImmutable
-val writeHttpCallback = AtomicReference({ _: ByteArray -> Unit }.freeze()).freeze()
 
 @ThreadLocal
 private var reader = mutableMapOf<DRILL_SOCKET, ByteArray?>()
@@ -80,21 +60,33 @@ class HttpInterceptor : Interceptor {
     override fun MemScope.interceptWrite(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>, size: Int): TcpFinalData {
         try {
             val readBytes = bytes.readBytes(size.convert())
-            val index = readBytes.indexOf(CR_LF_BYTES)
-            if (index > 0) {
-                val httpWriteHeaders = headersForInject.value()
-                if (isNotContainsDrillHeaders(readBytes, httpWriteHeaders)) {
-                    val firstLineOfResponse = readBytes.copyOfRange(FIRST_INDEX, index)
-                    val injectedHeader = prepareHeaders(httpWriteHeaders)
-                    val responseTail = readBytes.copyOfRange(index, size.convert())
-                    val modified = firstLineOfResponse + injectedHeader + responseTail
-                    logger.debug { "App write http by '$fd' fd: \n\t${( readBytes.copyOfRange(FIRST_INDEX, readBytes.indexOf(HEADERS_DELIMITER))).decodeToString().replace("\r\n", "\r\n\t")}" }
-                    writeHttpCallback.value(modified)
-                    return TcpFinalData(
-                        modified.toCValues().getPointer(this),
-                        modified.size,
-                        injectedHeader.size
-                    )
+            if (readBytes.decodeToString().startsWith("PRI")) {
+                println(readBytes.contentToString())
+                return TcpFinalData(bytes, size)
+            } else {
+                val index = readBytes.indexOf(CR_LF_BYTES)
+                if (index > 0) {
+                    val httpWriteHeaders = injectedHeaders.value()
+                    if (isNotContainsDrillHeaders(readBytes, httpWriteHeaders)) {
+                        val firstLineOfResponse = readBytes.copyOfRange(FIRST_INDEX, index)
+                        val injectedHeader = prepareHeaders(httpWriteHeaders)
+                        val responseTail = readBytes.copyOfRange(index, size.convert())
+                        val modified = firstLineOfResponse + injectedHeader + responseTail
+
+                        logger.debug {
+                            if (readBytes.indexOf(HEADERS_DELIMITER) != -1)
+                                "App write http by '$fd' fd: \n\t${(readBytes.copyOfRange(
+                                    FIRST_INDEX,
+                                    readBytes.indexOf(HEADERS_DELIMITER)
+                                )).decodeToString().replace("\r\n", "\r\n\t")}"
+                        }
+                        writeCallback.value(modified)
+                        return TcpFinalData(
+                            modified.toCValues().getPointer(this),
+                            modified.size,
+                            injectedHeader.size
+                        )
+                    }
                 }
             }
         } catch (ex: Exception) {
@@ -103,7 +95,11 @@ class HttpInterceptor : Interceptor {
         return TcpFinalData(bytes, size)
     }
 
-    override fun isSuitableByteStream(bytes: CPointer<ByteVarOf<Byte>>): Boolean {
+    override fun close(fd: DRILL_SOCKET) {
+        reader.remove(fd)
+    }
+
+    override fun isSuitableByteStream(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>): Boolean {
         return HTTP_VERBS.any { bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString().startsWith(it) }
     }
 
@@ -115,7 +111,17 @@ private fun processHttpRequest(readBytes: ByteArray, fd: DRILL_SOCKET, dataCallb
     } else {
         dataCallback()?.let {
             logger.debug { "App read http by '$fd' fd: \n\t${it.decodeToString().replace("\r\n", "\r\n\t")}" }
-            readHttpCallback.value(it)
+            val decodeToString = it.decodeToString()
+
+            readHeaders.value(
+                decodeToString.subSequence(
+                    decodeToString.indexOfFirst { it == '\r' },
+                    decodeToString.indexOf("\r\n\r\n")
+                ).split("\r\n").filter { it.isNotBlank() }.associate {
+                    val (k, v) = it.split(": ")
+                    k.encodeToByteArray() to v.encodeToByteArray()
+                })
+            readCallback.value(it)
         }
 
     }
