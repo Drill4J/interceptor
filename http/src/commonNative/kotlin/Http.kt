@@ -4,6 +4,8 @@ import com.epam.drill.hook.gen.DRILL_SOCKET
 import com.epam.drill.hook.io.TcpFinalData
 import com.epam.drill.hook.io.configureTcpHooks
 import com.epam.drill.hook.io.tcp.*
+import io.ktor.utils.io.bits.copyTo
+import io.ktor.utils.io.core.*
 import kotlinx.cinterop.*
 import mu.KotlinLogging
 import kotlin.native.concurrent.freeze
@@ -11,7 +13,8 @@ import kotlin.native.concurrent.freeze
 
 actual fun configureHttpInterceptor() {
     configureTcpHooks()
-    interceptors += HttpInterceptor().freeze()
+    interceptor.value = HttpInterceptor().freeze()
+//    interceptors += HttpInterceptor().freeze()
 }
 
 
@@ -26,6 +29,9 @@ val HTTP_VERBS =
     setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI") + HTTP_RESPONSE_MARKER
 
 @SharedImmutable
+val HTTP_VERBS_BYTES = HTTP_VERBS.map { it.encodeToByteArray() }
+
+@SharedImmutable
 val logger = KotlinLogging.logger("http")
 
 @ThreadLocal
@@ -34,24 +40,39 @@ private var reader = mutableMapOf<DRILL_SOCKET, ByteArray?>()
 
 class HttpInterceptor : Interceptor {
     override fun MemScope.interceptRead(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>, size: Int) {
+        io.ktor.utils.io.core.Buffer.Empty
         try {
-            bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString().let { prefix ->
-                val readBytesClb = { bytes.readBytes(size.convert()) }
-                when {
-                    HTTP_VERBS.any { prefix.startsWith(it) } -> {
-                        readBytesClb().let { readBytes -> processHttpRequest(readBytes, fd) { readBytes } }
-                    }
-                    reader[fd] != null -> {
-                        readBytesClb().let { readBytes ->
-                            processHttpRequest(readBytes, fd) {
-                                reader.remove(fd)?.plus(readBytes)
-                            }
-                        }
-                    }
-                    else -> {
-                    }
-                }
-            }
+//            bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString().let { prefix ->
+//            val readBytesClb = { bytes.readBytes(size.convert()) }
+//            when {
+//                reader[fd] != null -> {
+//                    readBytesClb().let { readBytes ->
+//                        processHttpRequest(readBytes, fd) {
+//                            reader.remove(fd)?.plus(readBytes)
+//                        }
+//                    }
+//                }
+//                else -> {
+                    val indexOf = bytes.indexOf(HEADERS_DELIMITER)
+//println(            indexOf)
+//                    bytes.readBytes(indexOf)
+//
+//                    val decodeToString = it.decodeToString()
+//                    readHeaders.value(
+//                        decodeToString.subSequence(
+//                            decodeToString.indexOfFirst { it == '\r' },
+//                            decodeToString.indexOf("\r\n\r\n")
+//                        ).split("\r\n").filter { it.isNotBlank() }.associate {
+//                            val (k, v) = it.split(": ")
+//                            k.encodeToByteArray() to v.encodeToByteArray()
+//                        })
+//                    readCallback.value(it)
+//                    bytes.readBytes(size.convert())
+//                        readBytesClb()
+//                            .let { readBytes -> processHttpRequest(readBytes, fd) { readBytes } }
+//                }
+//            }
+//            }
         } catch (ex: Throwable) {
             ex.printStackTrace()
         }
@@ -61,7 +82,6 @@ class HttpInterceptor : Interceptor {
         try {
             val readBytes = bytes.readBytes(size.convert())
             if (readBytes.decodeToString().startsWith("PRI")) {
-                println(readBytes.contentToString())
                 return TcpFinalData(bytes, size)
             } else {
                 val index = readBytes.indexOf(CR_LF_BYTES)
@@ -90,7 +110,7 @@ class HttpInterceptor : Interceptor {
                 }
             }
         } catch (ex: Exception) {
-            println(ex.message)
+            logger.error(ex) { "" }
         }
         return TcpFinalData(bytes, size)
     }
@@ -100,29 +120,43 @@ class HttpInterceptor : Interceptor {
     }
 
     override fun isSuitableByteStream(fd: DRILL_SOCKET, bytes: CPointer<ByteVarOf<Byte>>): Boolean {
-        return HTTP_VERBS.any { bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).decodeToString().startsWith(it) }
+        return HTTP_VERBS_BYTES.any {
+            bytes.readBytes(HTTP_DETECTOR_BYTES_COUNT).indexOf(it) != -1
+        } || reader[fd] != null
     }
 
 }
 
-private fun processHttpRequest(readBytes: ByteArray, fd: DRILL_SOCKET, dataCallback: (() -> ByteArray?)) =
+
+inline fun CPointer<ByteVarOf<Byte>>.indexOf(arr: ByteArray) = run {
+    Poo
+    for (index in 0..1000) {
+        val regionMatches = arr.foldIndexed(true) { i, acc, byte ->
+            acc && this[index + i] == byte
+        }
+        if (regionMatches) return@run copyTo()
+    }
+    null
+}
+
+private inline fun processHttpRequest(readBytes: ByteArray, fd: DRILL_SOCKET, dataCallback: (() -> ByteArray?)) =
     if (notContainsFullHeadersPart(readBytes)) {
         reader[fd] = reader[fd] ?: byteArrayOf() + readBytes
     } else {
-        dataCallback()?.let {
-            logger.debug { "App read http by '$fd' fd: \n\t${it.decodeToString().replace("\r\n", "\r\n\t")}" }
-            val decodeToString = it.decodeToString()
-
-            readHeaders.value(
-                decodeToString.subSequence(
-                    decodeToString.indexOfFirst { it == '\r' },
-                    decodeToString.indexOf("\r\n\r\n")
-                ).split("\r\n").filter { it.isNotBlank() }.associate {
-                    val (k, v) = it.split(": ")
-                    k.encodeToByteArray() to v.encodeToByteArray()
-                })
-            readCallback.value(it)
-        }
+//        dataCallback()?.let {
+//            logger.debug { "App read http by '$fd' fd: \n\t${it.decodeToString().replace("\r\n", "\r\n\t")}" }
+//            val decodeToString = it.decodeToString()
+////
+//            readHeaders.value(
+//                decodeToString.subSequence(
+//                    decodeToString.indexOfFirst { it == '\r' },
+//                    decodeToString.indexOf("\r\n\r\n")
+//                ).split("\r\n").filter { it.isNotBlank() }.associate {
+//                    val (k, v) = it.split(": ")
+//                    k.encodeToByteArray() to v.encodeToByteArray()
+//                })
+//            readCallback.value(it)
+//        }
 
     }
 

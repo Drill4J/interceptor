@@ -47,6 +47,9 @@ kotlin {
             if (org.jetbrains.kotlin.konan.target.HostManager.hostIsMingw)
                 it.linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
         }
+        compilations["main"]. defaultSourceSet {
+            dependsOn(sourceSets.named("commonMain").get())
+        }
     }
     val jvm = jvm {
         compilations["main"].defaultSourceSet {
@@ -86,8 +89,9 @@ kotlin {
 
         val common = maybeCreate("${JVM_TEST_TARGET_NAME}Main")
         with(common) {
+            dependsOn(sourceSets.named("commonMain").get())
             dependencies {
-                implementation("com.epam.drill.hook:drill-hook:1.2.1")
+                implementation("com.epam.drill.hook:drill-hook:1.2.2")
                 api(project(":http"))
                 implementation("com.epam.drill:jvmapi-native:0.4.1")
                 implementation("com.epam.drill.logger:logger:0.1.2")
@@ -99,6 +103,9 @@ kotlin {
         val jvmsTargets = targets.filterIsInstance<org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget>()
             .filter { it.name != "jvm" }
         jvmsTargets.forEach {
+            it.compilations["test"]. defaultSourceSet {
+                dependsOn(sourceSets.named("commonMain").get())
+            }
             it.compilations.forEach { knCompilation ->
                 if (knCompilation.name == "test") {
                     knCompilation.defaultSourceSet {

@@ -23,16 +23,19 @@ abstract class TestBase {
         Bindings.addHttpHook()
         val (key, value) = injectedHeaders.asSequence().first()
 
-        doHttpCall(address).let { (headers, body) ->
-            assertEquals(responseMessage, body.trim())
-            assertEquals(value, headers[key]?.first())
+
+        repeat(100000) {
+            doHttpCall(address).let { (headers, body) ->
+//                assertEquals(responseMessage, body.trim())
+//                assertEquals(value, headers[key]?.first())
+            }
         }
 
-        Bindings.removeHttpHook()
-        doHttpCall(address).let { (headers, body) ->
-            assertEquals(responseMessage, body.trim())
-            assertEquals(null, headers[key]?.first())
-        }
+//        Bindings.removeHttpHook()
+//        doHttpCall(address).let { (headers, body) ->
+//            assertEquals(responseMessage, body.trim())
+//            assertEquals(null, headers[key]?.first())
+//        }
     }
 
 }
