@@ -7,15 +7,15 @@ include(":http2:test-grpc")
 include(":http2:test")
 
 
+val scriptUrl: String by extra
+apply(from = "$scriptUrl/maven-repo.settings.gradle.kts")
+
 pluginManagement {
-    repositories {
-        maven(url = "http://oss.jfrog.org/oss-release-local")
-        maven(url = "https://dl.bintray.com/kotlin/kotlinx")
-        gradlePluginPortal()
-        google()
-        jcenter()
-        maven( // The google mirror is less flaky than mavenCentral()
-            url = "https://maven-central.storage-download.googleapis.com/repos/central/data/"
-        )
+    val kotlinVersion: String by extra
+    val drillGradlePluginVersion: String by extra
+    plugins {
+        kotlin("multiplatform") version kotlinVersion
+        id("com.epam.drill.cross-compilation") version drillGradlePluginVersion
     }
 }
+

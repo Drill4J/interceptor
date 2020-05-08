@@ -1,14 +1,7 @@
 plugins {
-    id("org.jetbrains.kotlin.multiplatform") version "1.3.70"
-    id("com.epam.drill.cross-compilation") version "0.15.1"
+    kotlin("multiplatform")
+    id("com.epam.drill.cross-compilation")
     `maven-publish`
-}
-
-repositories {
-    mavenLocal()
-    maven(url = "https://oss.jfrog.org/artifactory/list/oss-release-local")
-    mavenCentral()
-    jcenter()
 }
 
 kotlin {
@@ -48,22 +41,4 @@ tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile> {
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
-}
-
-publishing {
-    repositories {
-        maven {
-            url = uri("https://oss.jfrog.org/oss-release-local")
-            credentials {
-                username =
-                    if (project.hasProperty("bintrayUser"))
-                        project.property("bintrayUser").toString()
-                    else System.getenv("BINTRAY_USER")
-                password =
-                    if (project.hasProperty("bintrayApiKey"))
-                        project.property("bintrayApiKey").toString()
-                    else System.getenv("BINTRAY_API_KEY")
-            }
-        }
-    }
 }
