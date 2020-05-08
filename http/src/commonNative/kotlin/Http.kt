@@ -1,12 +1,11 @@
 package com.epam.drill.interceptor
 
-import com.epam.drill.hook.gen.DRILL_SOCKET
-import com.epam.drill.hook.io.TcpFinalData
-import com.epam.drill.hook.io.configureTcpHooks
+import com.epam.drill.hook.gen.*
+import com.epam.drill.hook.io.*
 import com.epam.drill.hook.io.tcp.*
 import kotlinx.cinterop.*
-import mu.KotlinLogging
-import kotlin.native.concurrent.freeze
+import mu.*
+import kotlin.native.concurrent.*
 
 
 actual fun configureHttpInterceptor() {
@@ -23,7 +22,7 @@ const val FIRST_INDEX = 0
 
 @SharedImmutable
 val HTTP_VERBS =
-    setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI") + HTTP_RESPONSE_MARKER
+        setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI") + HTTP_RESPONSE_MARKER
 
 @SharedImmutable
 val logger = KotlinLogging.logger("http")
@@ -73,18 +72,17 @@ class HttpInterceptor : Interceptor {
                         val responseTail = readBytes.copyOfRange(index, size.convert())
                         val modified = firstLineOfResponse + injectedHeader + responseTail
 
-                        logger.debug {
-                            if (readBytes.indexOf(HEADERS_DELIMITER) != -1)
-                                "App write http by '$fd' fd: \n\t${(readBytes.copyOfRange(
+                        logger.trace {
+                            "App write http by '$fd' fd: \n\t${(readBytes.copyOfRange(
                                     FIRST_INDEX,
-                                    readBytes.indexOf(HEADERS_DELIMITER)
-                                )).decodeToString().replace("\r\n", "\r\n\t")}"
+                                    readBytes.indexOf(HEADERS_DELIMITER).let { if (it != -1) it else readBytes.size }
+                            )).decodeToString().replace("\r\n", "\r\n\t")}"
                         }
                         writeCallback.value(modified)
                         return TcpFinalData(
-                            modified.toCValues().getPointer(this),
-                            modified.size,
-                            injectedHeader.size
+                                modified.toCValues().getPointer(this),
+                                modified.size,
+                                injectedHeader.size
                         )
                     }
                 }
@@ -106,32 +104,32 @@ class HttpInterceptor : Interceptor {
 }
 
 private fun processHttpRequest(readBytes: ByteArray, fd: DRILL_SOCKET, dataCallback: (() -> ByteArray?)) =
-    if (notContainsFullHeadersPart(readBytes)) {
-        reader[fd] = reader[fd] ?: byteArrayOf() + readBytes
-    } else {
-        dataCallback()?.let {
-            logger.debug { "App read http by '$fd' fd: \n\t${it.decodeToString().replace("\r\n", "\r\n\t")}" }
-            val decodeToString = it.decodeToString()
+        if (notContainsFullHeadersPart(readBytes)) {
+            reader[fd] = reader[fd] ?: byteArrayOf() + readBytes
+        } else {
+            dataCallback()?.let {
+                logger.trace { "App read http by '$fd' fd: \n\t${it.decodeToString().replace("\r\n", "\r\n\t")}" }
+                val decodeToString = it.decodeToString()
 
-            readHeaders.value(
-                decodeToString.subSequence(
-                    decodeToString.indexOfFirst { it == '\r' },
-                    decodeToString.indexOf("\r\n\r\n")
-                ).split("\r\n").filter { it.isNotBlank() }.associate {
-                    val (k, v) = it.split(": ")
-                    k.encodeToByteArray() to v.encodeToByteArray()
-                })
-            readCallback.value(it)
+                readHeaders.value(
+                        decodeToString.subSequence(
+                                decodeToString.indexOfFirst { it == '\r' },
+                                decodeToString.indexOf("\r\n\r\n")
+                        ).split("\r\n").filter { it.isNotBlank() }.associate {
+                            val (k, v) = it.split(": ")
+                            k.encodeToByteArray() to v.encodeToByteArray()
+                        })
+                readCallback.value(it)
+            }
+
         }
-
-    }
 
 
 private fun notContainsFullHeadersPart(readBytes: ByteArray) = readBytes.indexOf(HEADERS_DELIMITER) == -1
 
 
 private fun prepareHeaders(httpWriteHeaders: Map<String, String>) =
-    CR_LF_BYTES + httpWriteHeaders.map { (k, v) -> "$k: $v" }.joinToString(CR_LF).encodeToByteArray()
+        CR_LF_BYTES + httpWriteHeaders.map { (k, v) -> "$k: $v" }.joinToString(CR_LF).encodeToByteArray()
 
 private fun isNotContainsDrillHeaders(readBytes: ByteArray, httpWriteHeaders: Map<String, String>) =
-    httpWriteHeaders.isNotEmpty() && readBytes.indexOf(httpWriteHeaders.entries.first().key.encodeToByteArray()) == -1
+        httpWriteHeaders.isNotEmpty() && readBytes.indexOf(httpWriteHeaders.entries.first().key.encodeToByteArray()) == -1
