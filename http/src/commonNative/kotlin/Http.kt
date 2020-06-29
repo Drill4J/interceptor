@@ -3,8 +3,8 @@ package com.epam.drill.interceptor
 import com.epam.drill.hook.gen.*
 import com.epam.drill.hook.io.*
 import com.epam.drill.hook.io.tcp.*
+import com.epam.drill.logger.*
 import kotlinx.cinterop.*
-import mu.*
 import kotlin.native.concurrent.*
 
 
@@ -25,7 +25,7 @@ val HTTP_VERBS =
         setOf("OPTIONS", "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "TRACE", "CONNECT", "PRI") + HTTP_RESPONSE_MARKER
 
 @SharedImmutable
-val logger = KotlinLogging.logger("http")
+val logger = Logging.logger("http")
 
 @ThreadLocal
 private var reader = mutableMapOf<DRILL_SOCKET, ByteArray?>()
