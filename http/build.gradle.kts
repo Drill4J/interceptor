@@ -12,7 +12,7 @@ kotlin {
                 dependsOn(sourceSets.named("commonMain").get())
                 dependencies {
                     implementation("com.epam.drill.hook:drill-hook:1.2.2")
-                    implementation("com.epam.drill.logger:logger:0.1.2")
+                    implementation("com.epam.drill.logger:logger:0.3.0")
                 }
 
             }

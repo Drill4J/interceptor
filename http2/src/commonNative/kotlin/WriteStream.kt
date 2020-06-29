@@ -2,10 +2,6 @@ package com.epam.drill.interceptor
 
 import com.epam.drill.hpack.ByteArrayOutputStream
 import com.epam.drill.hpack.Encoder
-import mu.KotlinLogging
-
-
-private val logger = KotlinLogging.logger("Write HTTP/2")
 
 data class WriteStream(
     override var packetEndIndex: Int = 0,
