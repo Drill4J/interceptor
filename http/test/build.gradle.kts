@@ -89,8 +89,8 @@ kotlin {
             dependencies {
                 implementation("com.epam.drill.hook:drill-hook:1.2.1")
                 api(project(":http"))
-                implementation("com.epam.drill:jvmapi-native:0.4.1")
-                implementation("com.epam.drill.logger:logger:0.1.2")
+                implementation("com.epam.drill:jvmapi-native:0.5.0")
+                implementation("com.epam.drill.logger:logger:0.3.0")
             }
 
         }
