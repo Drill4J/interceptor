@@ -116,8 +116,8 @@ private fun processHttpRequest(readBytes: ByteArray, fd: DRILL_SOCKET, dataCallb
                                 decodeToString.indexOfFirst { it == '\r' },
                                 decodeToString.indexOf("\r\n\r\n")
                         ).split("\r\n").filter { it.isNotBlank() }.associate {
-                            val (k, v) = it.split(": ")
-                            k.encodeToByteArray() to v.encodeToByteArray()
+                            val (k, v) = it.split(":", limit = 2)
+                            k.trim().encodeToByteArray() to v.trim().encodeToByteArray()
                         })
                 readCallback.value(it)
             }
