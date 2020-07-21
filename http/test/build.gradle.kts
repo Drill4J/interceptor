@@ -39,7 +39,7 @@ fun org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension.currentTarget(
 val libName = "hook"
 
 val JVM_TEST_TARGET_NAME = "jvmAgent"
-
+val hookVersion: String by extra
 
 kotlin {
     currentTarget(JVM_TEST_TARGET_NAME) {
@@ -87,9 +87,9 @@ kotlin {
         val common = maybeCreate("${JVM_TEST_TARGET_NAME}Main")
         with(common) {
             dependencies {
-                implementation("com.epam.drill.hook:drill-hook:1.2.1")
+                implementation("com.epam.drill.hook:drill-hook:$hookVersion")
                 api(project(":http"))
-                implementation("com.epam.drill:jvmapi-native:0.5.0")
+                implementation("com.epam.drill:jvmapi:0.8.0")
                 implementation("com.epam.drill.logger:logger:0.3.0")
             }
 

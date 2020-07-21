@@ -10,7 +10,7 @@ import kotlin.native.concurrent.*
 
 actual fun configureHttpInterceptor() {
     configureTcpHooks()
-    interceptors += HttpInterceptor().freeze()
+   addInterceptor(HttpInterceptor().freeze())
 }
 
 
