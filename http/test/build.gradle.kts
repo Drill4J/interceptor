@@ -40,6 +40,9 @@ val libName = "hook"
 
 val JVM_TEST_TARGET_NAME = "jvmAgent"
 val hookVersion: String by extra
+val loggerVersion: String by extra
+val drillJvmApiVersion: String by extra
+
 
 kotlin {
     currentTarget(JVM_TEST_TARGET_NAME) {
@@ -51,7 +54,6 @@ kotlin {
     val jvm = jvm {
         compilations["main"].defaultSourceSet {
             dependencies {
-                implementation(kotlin("stdlib"))
                 implementation(kotlin("reflect"))
                 implementation(kotlin("test-junit"))
             }
@@ -89,8 +91,8 @@ kotlin {
             dependencies {
                 implementation("com.epam.drill.hook:drill-hook:$hookVersion")
                 api(project(":http"))
-                implementation("com.epam.drill:jvmapi:0.8.0")
-                implementation("com.epam.drill.logger:logger:0.3.0")
+                implementation("com.epam.drill:jvmapi:$drillJvmApiVersion")
+                implementation("com.epam.drill.logger:logger:$loggerVersion")
             }
 
         }
@@ -109,18 +111,11 @@ kotlin {
                 } else {
                     knCompilation.defaultSourceSet {
                         dependencies {
-                            implementation(kotlin("stdlib"))
                             implementation(kotlin("reflect"))
                         }
                     }
                 }
 
-            }
-        }
-
-        named("commonMain") {
-            dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
             }
         }
     }

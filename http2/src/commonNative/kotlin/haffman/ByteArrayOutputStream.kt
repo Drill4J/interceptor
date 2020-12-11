@@ -87,7 +87,6 @@ class ByteArrayOutputStream  constructor(size: Int = 32) : OutputStream() {
 
 
 
-    @Throws(IOException::class)
     override fun close() {
     }
 

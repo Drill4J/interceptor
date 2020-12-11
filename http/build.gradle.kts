@@ -5,6 +5,7 @@ plugins {
 }
 
 val hookVersion: String by extra
+val loggerVersion: String by extra
 
 kotlin {
 
@@ -14,7 +15,7 @@ kotlin {
                 dependsOn(sourceSets.named("commonMain").get())
                 dependencies {
                     implementation("com.epam.drill.hook:drill-hook:$hookVersion")
-                    implementation("com.epam.drill.logger:logger:0.3.0")
+                    implementation("com.epam.drill.logger:logger:$loggerVersion")
                 }
 
             }
@@ -24,14 +25,6 @@ kotlin {
     macosX64()
     mingwX64()
     linuxX64()
-
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
-            }
-        }
-    }
 }
 
 
