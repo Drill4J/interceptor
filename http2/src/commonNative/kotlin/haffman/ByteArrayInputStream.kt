@@ -67,7 +67,6 @@ class ByteArrayInputStream : InputStream {
     }
 
 
-    @Throws(IOException::class)
     override fun transferTo(out: OutputStream): Long {
         val len = count - pos
         out.write(buf, pos, len)
@@ -105,7 +104,6 @@ class ByteArrayInputStream : InputStream {
         pos = mark
     }
 
-    @Throws(IOException::class)
     override fun close() {
     }
 }

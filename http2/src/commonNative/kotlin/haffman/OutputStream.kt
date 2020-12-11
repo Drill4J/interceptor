@@ -25,7 +25,6 @@ abstract class OutputStream : Closeable, Flushable {
     }
 
 
-    @Throws(IOException::class)
     override fun close() {
     }
 

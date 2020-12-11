@@ -195,19 +195,16 @@ abstract class InputStream : Closeable {
                     }
                 }
 
-                @Throws(IOException::class)
                 override fun available(): Int {
                     ensureOpen()
                     return 0
                 }
 
-                @Throws(IOException::class)
                 override fun read(): Int {
                     ensureOpen()
                     return -1
                 }
 
-                @Throws(IOException::class)
                 override fun read(b: ByteArray, off: Int, len: Int): Int {
                     if (len == 0) {
                         return 0
@@ -216,32 +213,27 @@ abstract class InputStream : Closeable {
                     return -1
                 }
 
-                @Throws(IOException::class)
                 override fun readAllBytes(): ByteArray? {
                     ensureOpen()
                     return ByteArray(0)
                 }
 
-                @Throws(IOException::class)
                 override fun readNBytes(b: ByteArray, off: Int, len: Int): Int {
                     ensureOpen()
                     return 0
                 }
 
-                @Throws(IOException::class)
                 override fun readNBytes(len: Int): ByteArray? {
                     require(len >= 0) { "len < 0" }
                     ensureOpen()
                     return ByteArray(0)
                 }
 
-                @Throws(IOException::class)
                 override fun skip(n: Long): Long {
                     ensureOpen()
                     return 0L
                 }
 
-                @Throws(IOException::class)
                 override fun skipNBytes(n: Long) {
                     ensureOpen()
                     if (n > 0) {
@@ -249,13 +241,11 @@ abstract class InputStream : Closeable {
                     }
                 }
 
-                @Throws(IOException::class)
                 override fun transferTo(out: OutputStream): Long {
                     ensureOpen()
                     return 0L
                 }
 
-                @Throws(IOException::class)
                 override fun close() {
                     closed = true
                 }

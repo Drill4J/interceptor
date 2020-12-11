@@ -39,6 +39,9 @@ val libName = "http2Interceptor"
 val JVM_TEST_TARGET_NAME = "jvmAgent"
 
 
+val loggerVersion: String by extra
+val drillJvmApiVersion: String by extra
+
 kotlin {
     currentTarget(JVM_TEST_TARGET_NAME) {
         binaries.apply { sharedLib(libName, setOf(DEBUG)) }.forEach {
@@ -46,10 +49,9 @@ kotlin {
                 it.linkerOpts("-lpsapi", "-lwsock32", "-lws2_32", "-lmswsock")
         }
     }
-    val jvm = jvm {
+    jvm {
         compilations["main"].defaultSourceSet {
             dependencies {
-                implementation(kotlin("stdlib"))
                 implementation(kotlin("reflect"))
                 implementation(kotlin("test-junit"))
 
@@ -95,16 +97,10 @@ kotlin {
         with(common) {
             dependencies {
                 api(project(":http2"))
-                implementation("com.epam.drill:jvmapi-native:0.4.1")
-                implementation("com.epam.drill.logger:logger:0.3.0")
+                implementation("com.epam.drill:jvmapi:$drillJvmApiVersion")
+                implementation("com.epam.drill.logger:logger:$loggerVersion")
             }
 
-        }
-
-        named("commonMain") {
-            dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-common")
-            }
         }
     }
 }

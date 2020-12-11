@@ -19,7 +19,6 @@ val projectAgentName = ":http2:test"
 val projectAgent = project(projectAgentName)
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation(projectAgent)
     implementation("io.grpc:grpc-netty-shaded:${grpcVersion}")
     implementation("io.grpc:grpc-protobuf:${grpcVersion}")
